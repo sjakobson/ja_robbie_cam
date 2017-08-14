@@ -14,13 +14,16 @@
 
 #define PI 3.14159265
 
+#define CAMERA__WIDTH 480
+#define CAMERA__HEIGHT 640
+
 static const std::string OPENCV_WINDOW = "Image window";
 static const std::string OPENCV_WINDOW_2 = "Camera Feed";
 using namespace cv;
 using namespace std;
 
 /// Global variables
-int const max_BINARY_value = 255;
+double const max_BINARY_value = 255;
 int dilation_elem = 0;
 int dilation_size = 10;
 int dilation_type = 2;
@@ -30,10 +33,12 @@ int temp = 0;
 double angle_sum;
 double angle;
 double  blob_x = 0;
+double blob_x_size =0;
 int angle_final;
 
+vector<Mat> channels;
 
-Mat img, img_grey, img_thresh, img_dil, img_inv, img_blobs, img_flip, img_video_blobs;
+Mat img, img_grey, img_thresh, img_dil, img_inv, img_blobs, img_flip, img_video_blobs, img_final, img_hsv;
 
 class ImageConverter
 {
@@ -86,14 +91,31 @@ public:
 
         // select a region of interest
         cv::Mat part_ignore = img_flip(cv::Rect(0, 0, 640, 130));
-
         part_ignore.setTo(cv::Scalar(0, 0, 0));
+        //bottom ignore
+        cv::Mat part_ignore_2 = img_flip(cv::Rect(0, 440, 640, 40));
+        part_ignore_2.setTo(cv::Scalar(0, 0, 0));
+        //left ignore
+        cv::Mat part_ignore_3 = img_flip(cv::Rect(0, 0, 5, 480));
+        part_ignore_3.setTo(cv::Scalar(0, 0, 0));
+        //right ignore
+        cv::Mat part_ignore_4 = img_flip(cv::Rect(635, 0, 5, 480));
+        part_ignore_4.setTo(cv::Scalar(0, 0, 0));
 
+        //threshold( img_flip, img_flip, 232, max_BINARY_value, 1);
+
+        cvtColor( img_flip, img_hsv, CV_BGR2HSV);
+      /*  split(img_hsv, channels);
+        double s = cv::sum(img_hsv)[2];
+        cout<<"COunt is : "<<s<<endl;
+*/
         //convert to grey
-        cvtColor( img_flip, img_grey, CV_BGR2GRAY );
+        cvtColor( img_flip, img_grey, CV_BGR2GRAY);
 
         // Threshold image
         threshold( img_grey, img_thresh, 232, max_BINARY_value, 3);
+      //    cv::sum(img_thresh);
+
 
         Mat element = getStructuringElement( dilation_type,
                                        Size( 2*dilation_size + 1, 2*dilation_size+1 ),
@@ -103,6 +125,24 @@ public:
         dilate(img_thresh, img_dil,element);
         //invert image
         bitwise_not(img_dil, img_inv);
+
+        // Threshold image
+        threshold( img_inv, img_final, 232, max_BINARY_value, 0);
+
+        //split(img_hsv, channels);
+        double s = cv::sum(img_final)[0] / max_BINARY_value;
+        s = s/480/640;
+        cout<<"Count is : "<<s<<endl;
+
+        //cout<< img_final.at(Point(0,0))<<endl;
+
+        //cvtColor( img_final, img_hsv, CV_BGR2HSV);
+      //  split(img_hsv, channels);
+        //double s = cv::sum(img_hsv)[2];
+
+
+        //cout<<"COunt is : "<<s<<endl;
+
 
 
         // Change thresholds
@@ -134,7 +174,7 @@ public:
 
 
         // Detect blobs
-        detector->detect( img_inv, keypoints);
+        detector->detect( img_final, keypoints);
         size_t blob_count=keypoints.size();
         cout<<"total no of circles detected are: "<<blob_count<<endl;
 
@@ -154,10 +194,12 @@ public:
              }
 
           blob_x = keypoints[temp].pt.x;
+          blob_x_size = keypoints[temp].size;
          // cout<<keypoints[i].size<<"\n";
         //  keypoints[i].pt.x
       }
       cout<<"Largest blob is at x = "<<blob_x<<"\n";
+      cout<<"Largest blob size is = "<<blob_x_size<<"\n";
 
       angle_sum = -1*(blob_x-320);
       angle = atan(angle_sum/240) * 180/PI;
@@ -168,7 +210,7 @@ public:
     //  arrowedLine(img_flip, Point pt1, Point pt2, const Scalar& color, int thickness=1, int lineType=8, int shift=0, double tipLength=0.1)
 
         //  Mat im_with_keypoints;
-        drawKeypoints( img_inv, keypoints, img_blobs, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+        drawKeypoints( img_final, keypoints, img_blobs, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
         drawKeypoints( img_flip, keypoints, img_video_blobs, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
       //  drawKeypoints( img_flip, keypoints[temp].pt, img_video_blobs, Scalar(0,255,0), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 
@@ -179,22 +221,29 @@ public:
 
     std_msgs::Int8 msg_flag;
     std_msgs::Int8 msg_head;
-    msg_flag.data = 1;
-    msg_head.data = 1;
+  //  msg_flag.data = 1;
+  //  msg_head.data = 1;
 
-    if (blob_count == 1){
-      msg_flag.data = 1;
-
+    if(s <= 0.75){
+        msg_flag.data = 2;
     }else{
-      msg_flag.data = 0;
-    //  msg_head.data = 500;
+
+            if (blob_count == 0){
+              msg_flag.data = 0;
+
+            }else{
+              msg_flag.data = 1;
+            //  msg_head.data = 500;
+            msg_head.data = angle_final;
+            beacon_heading_pub.publish(msg_head);
   }
-  msg_head.data = angle_final;
+}
+
   //  ROS_INFO("%d", msg_flag.data);
     beacon_flag_pub.publish(msg_flag);
 
     //ROS_INFO("%lf", msg_head.data);
-    beacon_heading_pub.publish(msg_head);
+
 
     // Output modified video stream
    // image_pub_.publish(cv_ptr->toImageMsg());
