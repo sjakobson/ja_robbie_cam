@@ -164,7 +164,7 @@ public:
       angle = angle + 0.5;
       int angle_final = (int)angle;
 
-      circle( img_flip, Point( blob_x, 240 ), 32.0, Scalar( 0, 255, 0 ), 1, 8 );
+      //circle( img_flip, Point( blob_x, 240 ), 32.0, Scalar( 0, 255, 0 ), 1, 8 );
     //  arrowedLine(img_flip, Point pt1, Point pt2, const Scalar& color, int thickness=1, int lineType=8, int shift=0, double tipLength=0.1)
 
         //  Mat im_with_keypoints;
