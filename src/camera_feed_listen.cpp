@@ -61,8 +61,8 @@ public:
     cout << "FLAG";
     image_pub_ = it_.advertise("/ja_robbie_cam/output_video", 1);
 
-    cv::namedWindow(OPENCV_WINDOW);
-    cv::namedWindow(OPENCV_WINDOW_2);
+    //cv::namedWindow(OPENCV_WINDOW);
+    //cv::namedWindow(OPENCV_WINDOW_2);
   }
 
   ~ImageConverter()
@@ -212,13 +212,13 @@ public:
 
         //  Mat im_with_keypoints;
         drawKeypoints( img_final, keypoints, img_blobs, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
-        drawKeypoints( img_flip, keypoints, img_video_blobs, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+        drawKeypoints( img_flip, keypoints, cv_ptr->image, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
       //  drawKeypoints( img_flip, keypoints[temp].pt, img_video_blobs, Scalar(0,255,0), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 
     // Update GUI Window
-    cv::imshow(OPENCV_WINDOW, img_blobs);
-    cv::imshow(OPENCV_WINDOW_2, img_video_blobs);
-    cv::waitKey(3);
+  //  cv::imshow(OPENCV_WINDOW, img_blobs);
+  //  cv::imshow(OPENCV_WINDOW_2, cv_ptr->image);
+  //  cv::waitKey(3);
 
     std_msgs::Int8 msg_flag;
     std_msgs::Int8 msg_head;
@@ -247,7 +247,9 @@ public:
 
 
     // Output modified video stream
-   // image_pub_.publish(cv_ptr->toImageMsg());
+    image_pub_.publish(cv_ptr->toImageMsg());
+
+
   }
 };
 
