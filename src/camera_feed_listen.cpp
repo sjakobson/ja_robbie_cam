@@ -87,19 +87,20 @@ public:
         // Setup SimpleBlobDetector parameters.
         SimpleBlobDetector::Params params;
 
-        flip(cv_ptr->image, img_flip,0);
+        //flip(cv_ptr->image, img_flip,0);
+        flip(cv_ptr->image, img_flip,1);
 
         // select a region of interest
-        cv::Mat part_ignore = img_flip(cv::Rect(0, 0, 640, 130));
+        cv::Mat part_ignore = img_flip(cv::Rect(0, 0, 640, 250));
         part_ignore.setTo(cv::Scalar(0, 0, 0));
         //bottom ignore
         cv::Mat part_ignore_2 = img_flip(cv::Rect(0, 440, 640, 40));
         part_ignore_2.setTo(cv::Scalar(0, 0, 0));
         //left ignore
-        cv::Mat part_ignore_3 = img_flip(cv::Rect(0, 0, 5, 480));
+        cv::Mat part_ignore_3 = img_flip(cv::Rect(0, 0, 25, 480));
         part_ignore_3.setTo(cv::Scalar(0, 0, 0));
         //right ignore
-        cv::Mat part_ignore_4 = img_flip(cv::Rect(635, 0, 5, 480));
+        cv::Mat part_ignore_4 = img_flip(cv::Rect(615, 0, 25, 480));
         part_ignore_4.setTo(cv::Scalar(0, 0, 0));
 
         //threshold( img_flip, img_flip, 232, max_BINARY_value, 1);
@@ -113,7 +114,7 @@ public:
         cvtColor( img_flip, img_grey, CV_BGR2GRAY);
 
         // Threshold image
-        threshold( img_grey, img_thresh, 232, max_BINARY_value, 3);
+        threshold( img_grey, img_thresh, 233, max_BINARY_value, 3);
       //    cv::sum(img_thresh);
 
 
@@ -127,7 +128,7 @@ public:
         bitwise_not(img_dil, img_inv);
 
         // Threshold image
-        threshold( img_inv, img_final, 232, max_BINARY_value, 0);
+        threshold( img_inv, img_final, 233, max_BINARY_value, 0);
 
         //split(img_hsv, channels);
         double s = cv::sum(img_final)[0] / max_BINARY_value;
