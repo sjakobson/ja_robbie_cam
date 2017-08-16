@@ -17,8 +17,8 @@
 #define CAMERA__WIDTH 480
 #define CAMERA__HEIGHT 640
 
-static const std::string OPENCV_WINDOW = "Image window";
-static const std::string OPENCV_WINDOW_2 = "Camera Feed";
+//static const std::string OPENCV_WINDOW = "Image window";
+//static const std::string OPENCV_WINDOW_2 = "Camera Feed";
 using namespace cv;
 using namespace std;
 
@@ -61,14 +61,14 @@ public:
     cout << "FLAG";
     image_pub_ = it_.advertise("/ja_robbie_cam/output_video", 1);
 
-    //cv::namedWindow(OPENCV_WINDOW);
-    //cv::namedWindow(OPENCV_WINDOW_2);
+  //  cv::namedWindow(OPENCV_WINDOW);
+   // cv::namedWindow(OPENCV_WINDOW_2);
   }
 
   ~ImageConverter()
   {
-    cv::destroyWindow(OPENCV_WINDOW);
-    cv::destroyWindow(OPENCV_WINDOW_2);
+   // cv::destroyWindow(OPENCV_WINDOW);
+   // cv::destroyWindow(OPENCV_WINDOW_2);
   }
 
   void imageCb(const sensor_msgs::ImageConstPtr& msg)
@@ -87,11 +87,11 @@ public:
         // Setup SimpleBlobDetector parameters.
         SimpleBlobDetector::Params params;
 
-        //flip(cv_ptr->image, img_flip,0);
-        flip(cv_ptr->image, img_flip,1);
-
+//        flip(cv_ptr->image, img_flip,1);
+  //      flip(img_flip, img_flip,-1);
+	img_flip =cv_ptr->image;
         // select a region of interest
-        cv::Mat part_ignore = img_flip(cv::Rect(0, 0, 640, 250));
+        cv::Mat part_ignore = img_flip(cv::Rect(0, 0, 640, 100));
         part_ignore.setTo(cv::Scalar(0, 0, 0));
         //bottom ignore
         cv::Mat part_ignore_2 = img_flip(cv::Rect(0, 440, 640, 40));
@@ -114,7 +114,7 @@ public:
         cvtColor( img_flip, img_grey, CV_BGR2GRAY);
 
         // Threshold image
-        threshold( img_grey, img_thresh, 233, max_BINARY_value, 3);
+        threshold( img_grey, img_thresh, 230, max_BINARY_value, 3);
       //    cv::sum(img_thresh);
 
 
@@ -128,7 +128,7 @@ public:
         bitwise_not(img_dil, img_inv);
 
         // Threshold image
-        threshold( img_inv, img_final, 233, max_BINARY_value, 0);
+        threshold( img_inv, img_final, 230, max_BINARY_value, 0);
 
         //split(img_hsv, channels);
         double s = cv::sum(img_final)[0] / max_BINARY_value;
@@ -216,9 +216,9 @@ public:
       //  drawKeypoints( img_flip, keypoints[temp].pt, img_video_blobs, Scalar(0,255,0), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 
     // Update GUI Window
-  //  cv::imshow(OPENCV_WINDOW, img_blobs);
-  //  cv::imshow(OPENCV_WINDOW_2, cv_ptr->image);
-  //  cv::waitKey(3);
+    //cv::imshow(OPENCV_WINDOW, img_blobs);
+    //cv::imshow(OPENCV_WINDOW_2, cv_ptr->image);
+    //cv::waitKey(3);
 
     std_msgs::Int8 msg_flag;
     std_msgs::Int8 msg_head;
