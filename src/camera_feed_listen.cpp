@@ -61,14 +61,14 @@ public:
     cout << "FLAG";
     image_pub_ = it_.advertise("/ja_robbie_cam/output_video", 1);
 
-  //  cv::namedWindow(OPENCV_WINDOW);
-   // cv::namedWindow(OPENCV_WINDOW_2);
-  }
+    //cv::namedWindow(OPENCV_WINDOW);
+    //cv::namedWindow(OPENCV_WINDOW_2);
+  }////
 
   ~ImageConverter()
   {
-   // cv::destroyWindow(OPENCV_WINDOW);
-   // cv::destroyWindow(OPENCV_WINDOW_2);
+  //  cv::destroyWindow(OPENCV_WINDOW);
+  //  cv::destroyWindow(OPENCV_WINDOW_2);
   }
 
   void imageCb(const sensor_msgs::ImageConstPtr& msg)
@@ -114,7 +114,7 @@ public:
         cvtColor( img_flip, img_grey, CV_BGR2GRAY);
 
         // Threshold image
-        threshold( img_grey, img_thresh, 230, max_BINARY_value, 3);
+        threshold( img_grey, img_thresh, 226, max_BINARY_value, 3);
       //    cv::sum(img_thresh);
 
 
@@ -147,12 +147,12 @@ public:
 
 
         // Change thresholds
-        params.minThreshold = 0;
-        params.maxThreshold = 200;
+        params.minThreshold = 232;
+        params.maxThreshold = 255;
 
         // Filter by Area.
         params.filterByArea = true;
-        params.minArea = 2000;
+        params.minArea = 1000;
         params.maxArea = 100000;
 
         // Filter by Circularity
@@ -166,6 +166,7 @@ public:
         // Filter by Inertia
         params.filterByInertia = true;
         params.minInertiaRatio = 0.01;
+        params.maxInertiaRatio = 0.8;
 
         // Storage for blobs
         vector<KeyPoint> keypoints;
@@ -216,7 +217,7 @@ public:
       //  drawKeypoints( img_flip, keypoints[temp].pt, img_video_blobs, Scalar(0,255,0), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 
     // Update GUI Window
-    //cv::imshow(OPENCV_WINDOW, img_blobs);
+  //  cv::imshow(OPENCV_WINDOW, img_thresh);
     //cv::imshow(OPENCV_WINDOW_2, cv_ptr->image);
     //cv::waitKey(3);
 
