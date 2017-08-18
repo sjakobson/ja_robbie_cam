@@ -47,8 +47,8 @@ class ImageConverter
   image_transport::Subscriber image_sub_;
   image_transport::Publisher image_pub_;
   //ros::Publisher beacon_flag_pub = nh_.advertise<std_msgs::String>("beacon_flag", 1000);
-  ros::Publisher beacon_flag_pub = nh_.advertise<std_msgs::Int8>("beacon_flag",1000);
-  ros::Publisher beacon_heading_pub = nh_.advertise<std_msgs::Int8>("beacon_heading",1000);
+  ros::Publisher beacon_flag_pub = nh_.advertise<std_msgs::Int8>("beacon_flag",10);
+  ros::Publisher beacon_heading_pub = nh_.advertise<std_msgs::Int8>("beacon_heading",10);
   int count = 0;
 
 public:
