@@ -13,12 +13,9 @@
 #include <stdio.h>
 
 #define PI 3.14159265
-
 #define CAMERA__WIDTH 480
 #define CAMERA__HEIGHT 640
 
-//static const std::string OPENCV_WINDOW = "Image window";
-//static const std::string OPENCV_WINDOW_2 = "Camera Feed";
 using namespace cv;
 using namespace std;
 
@@ -29,7 +26,6 @@ int dilation_size = 10;
 int dilation_type = 2;
 int temp_size = 0;
 int temp = 0;
-
 double angle_sum;
 double angle;
 double  blob_x = 0;
@@ -38,15 +34,16 @@ int angle_final;
 
 vector<Mat> channels;
 
-Mat img, img_grey, img_thresh, img_dil, img_inv, img_blobs, img_flip, img_video_blobs, img_final, img_hsv;
+//images for various stages of processing
+Mat img, img_grey, img_thresh, img_dil, img_inv, img_blobs, img_flip, img_video_blobs, img_final;
 
 class ImageConverter
 {
+  /*ROS handles*/
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
   image_transport::Subscriber image_sub_;
   image_transport::Publisher image_pub_;
-  //ros::Publisher beacon_flag_pub = nh_.advertise<std_msgs::String>("beacon_flag", 1000);
   ros::Publisher beacon_flag_pub = nh_.advertise<std_msgs::Int8>("beacon_flag",10);
   ros::Publisher beacon_heading_pub = nh_.advertise<std_msgs::Int8>("beacon_heading",10);
   int count = 0;
@@ -60,15 +57,11 @@ public:
       &ImageConverter::imageCb, this);
     cout << "FLAG";
     image_pub_ = it_.advertise("/ja_robbie_cam/output_video", 1);
-
-    //cv::namedWindow(OPENCV_WINDOW);
-    //cv::namedWindow(OPENCV_WINDOW_2);
-  }////
+  }
 
   ~ImageConverter()
   {
-  //  cv::destroyWindow(OPENCV_WINDOW);
-  //  cv::destroyWindow(OPENCV_WINDOW_2);
+
   }
 
   void imageCb(const sensor_msgs::ImageConstPtr& msg)
@@ -87,9 +80,7 @@ public:
         // Setup SimpleBlobDetector parameters.
         SimpleBlobDetector::Params params;
 
-//        flip(cv_ptr->image, img_flip,1);
-  //      flip(img_flip, img_flip,-1);
-	img_flip =cv_ptr->image;
+	      img_flip =cv_ptr->image;
         // select a region of interest
         cv::Mat part_ignore = img_flip(cv::Rect(0, 0, 640, 100));
         part_ignore.setTo(cv::Scalar(0, 0, 0));
@@ -103,21 +94,13 @@ public:
         cv::Mat part_ignore_4 = img_flip(cv::Rect(615, 0, 25, 480));
         part_ignore_4.setTo(cv::Scalar(0, 0, 0));
 
-        //threshold( img_flip, img_flip, 232, max_BINARY_value, 1);
-
-        cvtColor( img_flip, img_hsv, CV_BGR2HSV);
-      /*  split(img_hsv, channels);
-        double s = cv::sum(img_hsv)[2];
-        cout<<"COunt is : "<<s<<endl;
-*/
         //convert to grey
         cvtColor( img_flip, img_grey, CV_BGR2GRAY);
 
         // Threshold image
         threshold( img_grey, img_thresh, 226, max_BINARY_value, 3);
-      //    cv::sum(img_thresh);
 
-
+        //dilation element size and shape. Used in dilation
         Mat element = getStructuringElement( dilation_type,
                                        Size( 2*dilation_size + 1, 2*dilation_size+1 ),
                                        Point( dilation_size, dilation_size ) );
@@ -130,21 +113,10 @@ public:
         // Threshold image
         threshold( img_inv, img_final, 230, max_BINARY_value, 0);
 
-        //split(img_hsv, channels);
+        //sum each elememt, used for saturation calculation
         double s = cv::sum(img_final)[0] / max_BINARY_value;
         s = s/480/640;
         cout<<"Count is : "<<s<<endl;
-
-        //cout<< img_final.at(Point(0,0))<<endl;
-
-        //cvtColor( img_final, img_hsv, CV_BGR2HSV);
-      //  split(img_hsv, channels);
-        //double s = cv::sum(img_hsv)[2];
-
-
-        //cout<<"COunt is : "<<s<<endl;
-
-
 
         // Change thresholds
         params.minThreshold = 232;
@@ -174,58 +146,39 @@ public:
         // Set up detector with params
         Ptr<SimpleBlobDetector> detector = SimpleBlobDetector::create(params);
 
-
         // Detect blobs
         detector->detect( img_final, keypoints);
         size_t blob_count=keypoints.size();
-        cout<<"total no of circles detected are: "<<blob_count<<endl;
 
-        for (int i=0;i<keypoints.size();i++){
-          // cout<<keypoints[i].pt<<"\n";
-          // cout<<keypoints[i].size<<"\n";
-         //  keypoints[i].pt.x
-       }
-
+        /*Iterate over keypoints array and store array location of largest blob
+        Used to find only largest blob (beacon) if reflections are found*/
        for (int i=0;i<keypoints.size();i++){
 
              if (keypoints[i].size>temp_size){
-
                temp_size=keypoints[i].size;
                temp = i;
-
              }
 
+          //set value of largest blob and its size to a variable
           blob_x = keypoints[temp].pt.x;
           blob_x_size = keypoints[temp].size;
-         // cout<<keypoints[i].size<<"\n";
-        //  keypoints[i].pt.x
       }
-      cout<<"Largest blob is at x = "<<blob_x<<"\n";
-      cout<<"Largest blob size is = "<<blob_x_size<<"\n";
 
+      /*Determine the angle to the blob*/
       angle_sum = -1*(blob_x-320);
       angle = atan(angle_sum/240) * 180/PI;
       angle = angle + 0.5;
       int angle_final = (int)angle;
 
-      //circle( img_flip, Point( blob_x, 240 ), 32.0, Scalar( 0, 255, 0 ), 1, 8 );
-    //  arrowedLine(img_flip, Point pt1, Point pt2, const Scalar& color, int thickness=1, int lineType=8, int shift=0, double tipLength=0.1)
+      //draw blob circles on the image for user viewing
+      drawKeypoints( img_final, keypoints, img_blobs, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
+      drawKeypoints( img_flip, keypoints, cv_ptr->image, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
 
-        //  Mat im_with_keypoints;
-        drawKeypoints( img_final, keypoints, img_blobs, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
-        drawKeypoints( img_flip, keypoints, cv_ptr->image, Scalar(0,0,255), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
-      //  drawKeypoints( img_flip, keypoints[temp].pt, img_video_blobs, Scalar(0,255,0), DrawMatchesFlags::DRAW_RICH_KEYPOINTS );
-
-    // Update GUI Window
-  //  cv::imshow(OPENCV_WINDOW, img_thresh);
-    //cv::imshow(OPENCV_WINDOW_2, cv_ptr->image);
-    //cv::waitKey(3);
-
+    //define message topic flags
     std_msgs::Int8 msg_flag;
     std_msgs::Int8 msg_head;
-  //  msg_flag.data = 1;
-  //  msg_head.data = 1;
 
+    //if saturation is greater than 25% flag beacon found
     if(s <= 0.75){
         msg_flag.data = 2;
     }else{
@@ -234,23 +187,18 @@ public:
               msg_flag.data = 0;
 
             }else{
+              //if blob is found publish found flag and angle to it
               msg_flag.data = 1;
-            //  msg_head.data = 500;
-            msg_head.data = angle_final;
-            beacon_heading_pub.publish(msg_head);
+              msg_head.data = angle_final;
+              //publish msg_head topic
+              beacon_heading_pub.publish(msg_head);
   }
 }
-
-  //  ROS_INFO("%d", msg_flag.data);
+    //Publish msg_flag topic
     beacon_flag_pub.publish(msg_flag);
-
-    //ROS_INFO("%lf", msg_head.data);
-
 
     // Output modified video stream
     image_pub_.publish(cv_ptr->toImageMsg());
-
-
   }
 };
 
